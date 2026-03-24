@@ -8,7 +8,7 @@ Et enkelt verktøy for planlegging av muntlige fagsamtaler og mentorsamtaler ved
 
 ---
 
-## Hva gjør det?
+## Om
 
 BPG Samtaletrekkeren genererer en tilfeldig trekningsliste og timeplan for individuelle elevsamtaler. Du legger inn klasselisten, setter opp vurderingsdager med klokkeslett, og appen fordeler elevene automatisk.
 
