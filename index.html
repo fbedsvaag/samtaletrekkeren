@@ -133,7 +133,6 @@
     padding-bottom: 0.5rem;
     border-bottom: 1px solid var(--border);
   }
-  .collapsible-title:hover { color: var(--accent); }
 
   /* ---- FORM ELEMENTS ---- */
   label {
@@ -878,13 +877,15 @@
   body.mentor-modus .alfa-table td:nth-child(3) { display: none !important; }
 
   .app-footer {
+    grid-column: 1 / -1;
     text-align: center;
-    padding: 1.25rem 1rem;
+    padding: 1rem;
     font-size: 12px;
     color: var(--text-hint);
     border-top: 1px solid var(--border);
-    margin-top: auto;
-    line-height: 1.5;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .app-footer a {
     color: var(--text-hint);
@@ -1066,11 +1067,8 @@
 
   <!-- Klasseliste -->
   <div class="section">
-    <div class="section-title collapsible-title" onclick="toggleKlasseliste()" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
-      <span>Klasseliste (valgfritt)</span>
-      <span id="klasse-pil" style="font-size:10px;transition:transform 0.2s;">▼</span>
-    </div>
-    <div id="klasse-innhold" style="display:none;">
+    <div class="section-title">Klasseliste (valgfritt)</div>
+    <div id="klasse-innhold">
     <div class="klasseliste-drop" id="csv-drop"
          onclick="document.getElementById('csv-input').click()"
          ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="dropFil(event)">
@@ -1276,13 +1274,7 @@ function oppdaterKlasseStatus() {
   if (elevnavn.length > 0) {
     el.textContent = elevnavn.length + ' elever lastet inn';
     el.classList.add('active');
-    // Åpne seksjonen automatisk hvis navn er lastet inn
-    const innhold = document.getElementById('klasse-innhold');
-    const pil = document.getElementById('klasse-pil');
-    if (innhold && innhold.style.display === 'none') {
-      innhold.style.display = '';
-      if (pil) pil.style.transform = 'rotate(180deg)';
-    }
+
   } else {
     el.classList.remove('active');
   }
@@ -1947,28 +1939,51 @@ function eksporterTeams() {
     .lunsj td { color: #888; font-style: italic; }
   </style>`;
 
+  const erMentor = document.body.classList.contains('mentor-modus');
+
   dagOrdre.forEach((ordre, dagIdx) => {
     if (!ordre || ordre.length === 0) return;
     const o = okter[dagIdx];
     const slots = byggSlots(dagIdx, pause, samtaletid);
     const tittel = `${dagNavn(o.dato).charAt(0).toUpperCase() + dagNavn(o.dato).slice(1)} ${formatDato(o.dato)}`;
     html += `<p><strong>${tittel}</strong></p>`;
-    html += `<table><thead><tr><th>#</th>`;
-    if (elevnavn.length > 0) html += `<th>Navn</th>`;
-    html += `<th>Oppgave</th><th>Tid</th></tr></thead><tbody>`;
-    slots.forEach(s => {
-      if (s.type === 'lunsj') {
-        html += `<tr class="lunsj"><td>—</td>`;
-        if (elevnavn.length > 0) html += `<td><em>Lunsj</em></td>`;
-        html += `<td>—</td><td>${minTilTid(s.fra)}–${minTilTid(s.fra + s.varighet)}</td></tr>`;
-      } else {
-        const navn = elevnavn.length > 0 ? (elevnavn[s.studentIdx] || '') : '';
-        html += `<tr><td>${s.slotNr}</td>`;
-        if (elevnavn.length > 0) html += `<td>${navn}</td>`;
-        html += `<td>Oppgave ${s.temaIdx+1} · ${escHtml(visningsnavn(s.temaIdx))}</td>`;
-        html += `<td>${minTilTid(s.fra)}–${minTilTid(s.til)}</td></tr>`;
-      }
-    });
+
+    if (erMentor) {
+      // Mentormodus: kun #, Navn, Tid
+      html += `<table><thead><tr><th>#</th>`;
+      if (elevnavn.length > 0) html += `<th>Navn</th>`;
+      html += `<th>Tid</th></tr></thead><tbody>`;
+      slots.forEach(s => {
+        if (s.type === 'lunsj') {
+          html += `<tr class="lunsj"><td>—</td>`;
+          if (elevnavn.length > 0) html += `<td><em>Lunsj</em></td>`;
+          html += `<td>${minTilTid(s.fra)}–${minTilTid(s.fra + s.varighet)}</td></tr>`;
+        } else {
+          const navn = elevnavn.length > 0 ? (elevnavn[s.studentIdx] || '') : '';
+          html += `<tr><td>${s.slotNr}</td>`;
+          if (elevnavn.length > 0) html += `<td>${navn}</td>`;
+          html += `<td>${minTilTid(s.fra)}–${minTilTid(s.til)}</td></tr>`;
+        }
+      });
+    } else {
+      // Fagsamtale: #, Navn, Oppgave, Tid
+      html += `<table><thead><tr><th>#</th>`;
+      if (elevnavn.length > 0) html += `<th>Navn</th>`;
+      html += `<th>Oppgave</th><th>Tid</th></tr></thead><tbody>`;
+      slots.forEach(s => {
+        if (s.type === 'lunsj') {
+          html += `<tr class="lunsj"><td>—</td>`;
+          if (elevnavn.length > 0) html += `<td><em>Lunsj</em></td>`;
+          html += `<td>—</td><td>${minTilTid(s.fra)}–${minTilTid(s.fra + s.varighet)}</td></tr>`;
+        } else {
+          const navn = elevnavn.length > 0 ? (elevnavn[s.studentIdx] || '') : '';
+          html += `<tr><td>${s.slotNr}</td>`;
+          if (elevnavn.length > 0) html += `<td>${navn}</td>`;
+          html += `<td>Oppgave ${s.temaIdx+1} · ${escHtml(visningsnavn(s.temaIdx))}</td>`;
+          html += `<td>${minTilTid(s.fra)}–${minTilTid(s.til)}</td></tr>`;
+        }
+      });
+    }
     html += `</tbody></table><br>`;
   });
 
@@ -2110,14 +2125,6 @@ function setModus(modus) {
   if (document.getElementById('view-alfabetisk')?.classList.contains('active')) {
     renderAlfabetisk();
   }
-}
-
-function toggleKlasseliste() {
-  const innhold = document.getElementById('klasse-innhold');
-  const pil = document.getElementById('klasse-pil');
-  const aapen = innhold.style.display !== 'none';
-  innhold.style.display = aapen ? 'none' : '';
-  pil.style.transform = aapen ? '' : 'rotate(180deg)';
 }
 
 function visTab(id, btn) {
